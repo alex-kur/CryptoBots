@@ -1,0 +1,73 @@
+{
+	"initialBalance": {
+		"dataType": "Map",
+		"value": [
+			["USDT", 1000]
+		]
+	},
+	"balancerStrategySettings": {
+		/*"startDate": "2021-11-10T00:00:00.000Z",
+		"endDate": "2024-03-05T00:00:00.000Z",*/
+		/*"startDate": "2020-09-16T00:00:00.000Z",
+		"endDate": "2022-11-05T00:00:00.000Z",*/
+		"maxPermissibleImbalancePercent": 20,
+		"rebalanceFrequencyInMonth": 6
+	},
+	"assetsAllocationStrategySettings": {
+		"useMaxMAValue": true,
+		//For short period #1
+		/*"startDate": "2024-04-01T00:00:00.000Z",
+		"endDate": "2024-11-01T00:00:00.000Z",*/
+		//For short period #1
+		/*"startDate": "2022-01-01T00:00:00.000Z",
+		"endDate": "2023-01-01T00:00:00.000Z",*/
+		"startDate": "",
+		"endDate": "",
+		"movingAverageKind": "SMA",
+		"movingAverageSettings": {"period": 100, "periodKind": "days"},
+		//For long period 
+		"allocationSettings": [
+			{"deviationFromMAPercent": -80, "targetBaseCoinsPercent": 90},
+			{"deviationFromMAPercent": -70, "targetBaseCoinsPercent": 85},
+			{"deviationFromMAPercent": -60, "targetBaseCoinsPercent": 80},
+			{"deviationFromMAPercent": -50, "targetBaseCoinsPercent": 75},
+			{"deviationFromMAPercent": -40, "targetBaseCoinsPercent": 70},
+			{"deviationFromMAPercent": -30, "targetBaseCoinsPercent": 65},
+			{"deviationFromMAPercent": -20, "targetBaseCoinsPercent": 60},
+
+			{"deviationFromMAPercent": 25, "targetBaseCoinsPercent": 50},
+			{"deviationFromMAPercent": 50, "targetBaseCoinsPercent": 40},
+			{"deviationFromMAPercent": 75, "targetBaseCoinsPercent": 30},
+			{"deviationFromMAPercent": 100, "targetBaseCoinsPercent": 20},
+			{"deviationFromMAPercent": 150, "targetBaseCoinsPercent": 10}
+
+			/*{"deviationFromMAPercent": 50, "targetBaseCoinsPercent": 50},
+			{"deviationFromMAPercent": 100, "targetBaseCoinsPercent": 40},
+			{"deviationFromMAPercent": 200, "targetBaseCoinsPercent": 30},
+			{"deviationFromMAPercent": 300, "targetBaseCoinsPercent": 20},
+			{"deviationFromMAPercent": 400, "targetBaseCoinsPercent": 10}*/
+		]
+		//For short period #1
+		/*"allocationSettings": [
+			{"deviationFromMAPercent": -25, "targetBaseCoinsPercent": 100},
+			{"deviationFromMAPercent": -20, "targetBaseCoinsPercent": 90},
+			{"deviationFromMAPercent": -15, "targetBaseCoinsPercent": 80},
+			{"deviationFromMAPercent": -10, "targetBaseCoinsPercent": 70},
+			{"deviationFromMAPercent": -5, "targetBaseCoinsPercent": 60},
+
+			{"deviationFromMAPercent": 5, "targetBaseCoinsPercent": 40},
+			{"deviationFromMAPercent": 10, "targetBaseCoinsPercent": 30},
+			{"deviationFromMAPercent": 15, "targetBaseCoinsPercent": 20},
+			{"deviationFromMAPercent": 20, "targetBaseCoinsPercent": 10},
+			{"deviationFromMAPercent": 25, "targetBaseCoinsPercent": 0}
+		]*/
+	},
+	//For BTC
+	"gridStrategySettings": {
+		"startDate": "2024-03-01T00:00:00.000Z",
+		"endDate": "2024-11-01T00:00:00.000Z",
+		"minPrice": 50000,
+		"maxPrice": 70000,
+		"gridSize": 11
+	}
+}
