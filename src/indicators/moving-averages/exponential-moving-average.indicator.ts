@@ -1,21 +1,27 @@
 import { IMovingAverageSettings, MovingAverageIndicator } from "./moving-average.indicator";
 
 export class ExponentialMovingAverageIndicator extends MovingAverageIndicator {
-	private readonly alpha: number;
-	
 	public constructor(settings: IMovingAverageSettings) {
 		super(settings);
-		this.alpha = 2 / (settings.period + 1);
 	}
 
 	protected updateValue() {
-		this._value = this.calculateValue(this.candlesticksInPeriod.length - 1);
+		const data = this.candlesticksInPeriod.map(this.priceGetter);
+		this._value = ExponentialMovingAverageIndicator.calculateValue(data);
 	}
 
-	private calculateValue(index: number): number {
-		if (index === 0)
-			return this.candlesticksInPeriod[0].closePrice;
+	public static calculateValue(data: readonly number[]): number {
+		this.validateData(data);
+		const alpha = 2 / (data.length + 1);
+		const result = this.calculateValueRecursively(data, data.length - 1, alpha);
+		return result;
+	}
 
-		return this.alpha * this.candlesticksInPeriod[index].closePrice + (1 - this.alpha) * this.calculateValue(index - 1);
+	private static calculateValueRecursively(data: readonly number[], index: number, alpha: number): number {
+		if (index === 0)
+			return data[0];
+
+		const result = alpha * data[index] + (1 - alpha) * this.calculateValueRecursively(data, index - 1, alpha);
+		return result;
 	}
 }

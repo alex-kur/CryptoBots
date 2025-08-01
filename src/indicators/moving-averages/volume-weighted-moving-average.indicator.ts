@@ -6,8 +6,20 @@ export class VolumeWeightedMovingAverageIndicator extends MovingAverageIndicator
 	}
 
 	protected updateValue() {
-		const volumeWeightedSum = this.candlesticksInPeriod.reduce((sum, cs) => sum + cs.closePrice * cs.volume, 0);
-		const volumeSum = this.candlesticksInPeriod.reduce((sum, cs) => sum + cs.volume, 0);
-		this._value = volumeWeightedSum / volumeSum;
+		const data = this.candlesticksInPeriod.map(this.priceGetter);
+		const volumes = this.candlesticksInPeriod.map(cs => cs.volume);
+		this._value = VolumeWeightedMovingAverageIndicator.calculateValue(data, volumes);
+	}
+
+	public static calculateValue(data: readonly number[], volumes: readonly number[]): number {
+		this.validateData(data);
+
+		if (data.length !== volumes.length)
+			throw new Error("data.length !== volume.length");
+
+		const volumeWeightedSum = data.reduce((sum, d, i) => sum + d * volumes[i], 0);
+		const volumesSum = volumes.reduce((sum, v) => sum + v, 0);
+		const result = volumeWeightedSum / volumesSum;
+		return result;
 	}
 }

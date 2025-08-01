@@ -14,6 +14,7 @@ export interface IIndicatorSettings {
 
 export abstract class Indicator<T extends IIndicatorSettings> {
 	private readonly _candlesticksInPeriod: Candlestick[] = [];
+	protected readonly priceGetter: (cs: Candlestick) => number = (cs) => cs.closePrice;
 
 	private dailyVolume: number = 0;
 	private dayOpenPrice?: number;

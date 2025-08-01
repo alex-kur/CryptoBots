@@ -1,16 +1,15 @@
 import { IIndicatorSettings, Indicator } from "../indicator";
 
 export enum MovingAverageKind {
-	//Simple moving average
+	/**Simple moving average*/
 	SMA = "SMA",
-	//Exponential moving average
+	/**Exponential moving average*/
 	EMA = "EMA",
-	//Volume weighted moving average
+	/**Volume weighted moving average*/
 	VWMA = "VWMA"
 }
 
-export interface IMovingAverageSettings extends IIndicatorSettings {
-}
+export interface IMovingAverageSettings extends IIndicatorSettings {}
 
 export abstract class MovingAverageIndicator extends Indicator<IMovingAverageSettings> {
 	protected _value?: number;
@@ -21,5 +20,10 @@ export abstract class MovingAverageIndicator extends Indicator<IMovingAverageSet
 
 	public get value(): number | undefined {
 		return this._value;
+	}
+
+	protected static validateData(data: readonly number[]) {
+		if (!data || !data.length)
+			throw new Error("Data is empty");
 	}
 }
