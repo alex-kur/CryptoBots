@@ -5,9 +5,9 @@ export class VolumeWeightedMovingAverageIndicator extends MovingAverageIndicator
 		super(settings);
 	}
 
-	protected calculateValue(): number {
+	protected updateValue() {
 		const volumeWeightedSum = this.candlesticksInPeriod.reduce((sum, cs) => sum + cs.closePrice * cs.volume, 0);
 		const volumeSum = this.candlesticksInPeriod.reduce((sum, cs) => sum + cs.volume, 0);
-		return volumeWeightedSum / volumeSum;
+		this._value = volumeWeightedSum / volumeSum;
 	}
 }

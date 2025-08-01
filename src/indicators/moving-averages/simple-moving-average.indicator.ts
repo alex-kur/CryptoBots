@@ -8,7 +8,7 @@ export class SimpleMovingAverageIndicator extends MovingAverageIndicator {
 		this.valueWeight = 1 / this.settings.period;
 	}
 
-	protected calculateValue(): number {
-		return this.candlesticksInPeriod.reduce((sum, cs) => sum + cs.closePrice * this.valueWeight, 0);
+	protected updateValue() {
+		this._value = this.candlesticksInPeriod.reduce((sum, cs) => sum + cs.closePrice * this.valueWeight, 0);
 	}
 }
