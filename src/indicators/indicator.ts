@@ -45,7 +45,7 @@ export abstract class Indicator<T extends IIndicatorSettings> {
 		}
 
 		if (DateUtils.compareDateAndHours(this.previousCandlestick.openTime, candlestick.openTime) > 0)
-			throw new Error(`MovingAverage: current candlestick.openDate > previos candlestick.openDate`);
+			throw new Error(`MovingAverage: current candlestick.openDate < previos candlestick.openDate`);
 		else if (DateUtils.compareDateAndHours(this.previousCandlestick.openTime, candlestick.openTime) === 0)
 			throw new Error(`MovingAverage: current candlestick already processed`);
 		
