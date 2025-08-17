@@ -5,15 +5,14 @@ export class SimpleMovingAverageIndicator extends MovingAverageIndicator {
 		super(settings);
 	}
 
-	protected updateValue() {
-		const data = this.candlesticksInPeriod.map(this.priceGetter);
-		this._value = SimpleMovingAverageIndicator.calculateValue(data);
-	}
-
 	public static calculateValue(data: readonly number[]): number {
 		this.validateData(data);
 		const weight = 1 / data.length;
 		const result = data.reduce((sum, d) => sum + d * weight, 0);
 		return result;
+	}
+
+	protected calculateValueImpl(): number {
+		return SimpleMovingAverageIndicator.calculateValue(this.prices);
 	}
 }

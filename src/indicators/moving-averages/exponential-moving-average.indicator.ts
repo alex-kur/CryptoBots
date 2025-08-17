@@ -5,11 +5,6 @@ export class ExponentialMovingAverageIndicator extends MovingAverageIndicator {
 		super(settings);
 	}
 
-	protected updateValue() {
-		const data = this.candlesticksInPeriod.map(this.priceGetter);
-		this._value = ExponentialMovingAverageIndicator.calculateValue(data);
-	}
-
 	public static calculateValue(data: readonly number[]): number {
 		this.validateData(data);
 		const alpha = 2 / (data.length + 1);
@@ -23,5 +18,9 @@ export class ExponentialMovingAverageIndicator extends MovingAverageIndicator {
 
 		const result = alpha * data[index] + (1 - alpha) * this.calculateValueRecursively(data, index - 1, alpha);
 		return result;
+	}
+
+	protected calculateValueImpl(): number {
+		return ExponentialMovingAverageIndicator.calculateValue(this.prices);
 	}
 }

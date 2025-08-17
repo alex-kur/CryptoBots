@@ -31,7 +31,7 @@ export class AssetsAllocationStrategy extends TradingStarategy {
 
 			this.getMaValue = this.settings.useMaxMAValue
 				? () => this.maMaxValue
-				: () => this.movingAverage.value;
+				: () => this.movingAverage.currentValue;
 	}
 
 	public get settings(): IAssetsAllocationStrategySettings {
@@ -53,8 +53,8 @@ export class AssetsAllocationStrategy extends TradingStarategy {
 	protected onCurrentHourEndedImpl(candlestick: Candlestick): void {
 		this.movingAverage.process(candlestick);
 		
-		if (this.movingAverage.value)
-			this.maMaxValue = Math.max(this.maMaxValue || 0, this.movingAverage.value);
+		if (this.movingAverage.currentValue)
+			this.maMaxValue = Math.max(this.maMaxValue || 0, this.movingAverage.currentValue);
 	}
 
 	private rebalanceIfNeeded(openPrice: number) {

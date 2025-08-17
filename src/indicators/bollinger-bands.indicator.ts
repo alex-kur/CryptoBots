@@ -5,38 +5,33 @@ export interface IBollingerBandsSettings extends IIndicatorSettings {
 	readonly multiplier: number;
 }
 
-export class BollingerBandsIndicator extends Indicator<IBollingerBandsSettings> {
-	private _upperValue?: number;
-	private _averageValue?: number;
-	private _lowerValue?: number;
-	
+export interface IBollingerBandsValue {
+	readonly upperValue: number;
+	readonly averageValue: number;
+	readonly lowerValue: number;
+}
+
+export class BollingerBandsIndicator extends Indicator<IBollingerBandsSettings, IBollingerBandsValue> {
 	public constructor(settings: IBollingerBandsSettings) {
 		super(settings);
 	}
 
-	public get upperValue(): number | undefined {
-		return this._upperValue;
+	public static calculateValue(data: readonly number[], multiplier: number): IBollingerBandsValue {
+		this.validateData(data);
+		const averageValue = SimpleMovingAverageIndicator.calculateValue(data);
+		const standardDeviation = this.calculateStandardDeviation(data, averageValue);
+		const upperValue = averageValue + standardDeviation * multiplier;
+		const lowerValue = averageValue - standardDeviation * multiplier;
+		return {upperValue: upperValue, averageValue: averageValue, lowerValue: lowerValue};
 	}
 
-	public get averageValue(): number | undefined {
-		return this._averageValue;
-	}
-
-	public get lowerValue(): number | undefined {
-		return this._lowerValue;
-	}
-
-	protected updateValue(): void {
-		const data = this.candlesticksInPeriod.map(this.priceGetter);
-		this._averageValue = SimpleMovingAverageIndicator.calculateValue(data);
-		const standardDeviation = this.calculateStandardDeviation(this._averageValue);
-		this._upperValue = this._averageValue + standardDeviation * this.settings.multiplier;
-		this._lowerValue = this._averageValue - standardDeviation * this.settings.multiplier;
-	}
-
-	private calculateStandardDeviation(averageValue: number): number {
-		const sum = this.candlesticksInPeriod.reduce((sum, cs) => sum + Math.pow(cs.closePrice - averageValue, 2), 0);
-		const result = Math.sqrt(sum / (this.settings.period - 1));
+	private static calculateStandardDeviation(data: readonly number[], averageValue: number): number {
+		const sum = data.reduce((sum, d) => sum + Math.pow(d - averageValue, 2), 0);
+		const result = Math.sqrt(sum / (data.length - 1));
 		return result;
+	}
+
+	protected calculateValueImpl(): IBollingerBandsValue {
+		return BollingerBandsIndicator.calculateValue(this.prices, this.settings.multiplier);
 	}
 }

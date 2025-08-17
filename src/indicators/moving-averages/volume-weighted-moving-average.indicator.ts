@@ -5,12 +5,6 @@ export class VolumeWeightedMovingAverageIndicator extends MovingAverageIndicator
 		super(settings);
 	}
 
-	protected updateValue() {
-		const data = this.candlesticksInPeriod.map(this.priceGetter);
-		const volumes = this.candlesticksInPeriod.map(cs => cs.volume);
-		this._value = VolumeWeightedMovingAverageIndicator.calculateValue(data, volumes);
-	}
-
 	public static calculateValue(data: readonly number[], volumes: readonly number[]): number {
 		this.validateData(data);
 
@@ -21,5 +15,11 @@ export class VolumeWeightedMovingAverageIndicator extends MovingAverageIndicator
 		const volumesSum = volumes.reduce((sum, v) => sum + v, 0);
 		const result = volumeWeightedSum / volumesSum;
 		return result;
+	}
+
+
+	protected calculateValueImpl(): number {
+		const volumes = this.candlesticks.map(cs => cs.volume);
+		return VolumeWeightedMovingAverageIndicator.calculateValue(this.prices, volumes);
 	}
 }

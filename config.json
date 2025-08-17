@@ -23,8 +23,8 @@
 		"endDate": "2023-01-01T00:00:00.000Z",*/
 		"startDate": "",
 		"endDate": "",
-		"movingAverageKind": "SMA",
-		"movingAverageSettings": {"period": 100, "periodKind": "days"},
+		"movingAverageKind": "Simple",
+		"movingAverageSettings": {"length": 100, "candlestickPeriod": "1D"},
 		//For long period 
 		"allocationSettings": [
 			{"deviationFromMAPercent": -80, "targetBaseCoinsPercent": 90},

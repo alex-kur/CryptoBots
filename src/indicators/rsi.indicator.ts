@@ -4,48 +4,47 @@ import { ExponentialMovingAverageIndicator } from "./moving-averages/exponential
 export interface IRSISettings extends IIndicatorSettings {
 }
 
-export class RSIIndicator extends Indicator<IRSISettings> {
-	private _value?: number;
-	
+export class RSIIndicator extends Indicator<IRSISettings, number> {
 	public constructor(settings: IRSISettings) {
 		super(settings);
 	}
-
-	public get value(): number | undefined {
-		return this._value;
-	}
 	
-	protected updateValue() {
-		const positivePriceChanges: number[] = [];
-		const negativePriceChanges: number[] = [];
+	public static calculateValue(data: readonly number[]): number {
+		this.validateData(data);
+		
+		const up: number[] = [];
+		const down: number[] = [];
 
-		for (let i = 1; i < this.candlesticksInPeriod.length; i++) {
-			const previousPrice = this.priceGetter(this.candlesticksInPeriod[i - 1]);
-			const currentPrice = this.priceGetter(this.candlesticksInPeriod[i]);
+		for (let i = 1; i < data.length; i++) {
+			const current = data[i];
+			const previous = data[i - 1];
 			
-			if (currentPrice > previousPrice) {
-				positivePriceChanges.push(currentPrice - previousPrice);
-				negativePriceChanges.push(0);
+			if (current > previous) {
+				up.push(current - previous);
+				down.push(0);
 			}
-			else if (currentPrice < previousPrice) {
-				positivePriceChanges.push(0);
-				negativePriceChanges.push(previousPrice - currentPrice);
+			else if (current < previous) {
+				up.push(0);
+				down.push(previous - current);
 			}
 			else {
-				positivePriceChanges.push(0);
-				negativePriceChanges.push(0);
+				up.push(0);
+				down.push(0);
 			}
 		}
 
-		const emaU = ExponentialMovingAverageIndicator.calculateValue(positivePriceChanges);
-		const emaD = ExponentialMovingAverageIndicator.calculateValue(negativePriceChanges);
+		const upEma = ExponentialMovingAverageIndicator.calculateValue(up);
+		const downEma = ExponentialMovingAverageIndicator.calculateValue(down);
 
-		if (emaD === 0) {
-			this._value = 100;
-			return;
-		}
+		if (downEma === 0)
+			return 100;
 
-		const relativeStrength = emaU / emaD;
-		this._value = 100 - 100 / (1 + relativeStrength);
+		const relativeStrength = upEma / downEma;
+		const result = 100 - 100 / (1 + relativeStrength);
+		return result;
+	}
+
+	protected calculateValueImpl(): number {
+		return RSIIndicator.calculateValue(this.prices);
 	}
 }

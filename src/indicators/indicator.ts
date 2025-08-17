@@ -1,91 +1,124 @@
 import { Candlestick } from "../models/candlestick";
-import { NumberRange } from "../models/number-range";
+import { IDateValuePair } from "../models/date-value-pair";
 import { DateUtils } from "../utils/date.utils";
 
-export enum PeriodKind {
-	Days = "days",
-	Hours = "hours"
+export enum CandlestickPeriod {
+	OneHour = "1H",
+	TwoHours = "2H",
+	FourHours = "4H",
+	SixHours = "6H",
+	TwelveHours = "12H",
+	OneDay = "1D",
+	OneWeek = "1W",
+	OneMonth = "1M"
 }
 
 export interface IIndicatorSettings {
-	readonly period: number;
-	readonly periodKind: PeriodKind;
+	readonly length: number;
+	readonly candlestickPeriod: CandlestickPeriod;
 }
 
-export abstract class Indicator<T extends IIndicatorSettings> {
-	private readonly _candlesticksInPeriod: Candlestick[] = [];
-	protected readonly priceGetter: (cs: Candlestick) => number = (cs) => cs.closePrice;
+export abstract class Indicator<TSettings extends IIndicatorSettings, TValue> {
+	private static readonly valuesLimit = 1000;
+	
+	private readonly _candlesticks: Candlestick[] = [];
+	private readonly _values: IDateValuePair<TValue>[] = [];
+	private lastProcessedCandlestick?: Candlestick;
 
-	private dailyVolume: number = 0;
-	private dayOpenPrice?: number;
-	private dailyPriceRange: NumberRange = new NumberRange();
-	private previousCandlestick?: Candlestick;
-
-	public constructor(protected readonly settings: T) {
+	public constructor(protected readonly settings: TSettings) {
 	}
 
-	protected get candlesticksInPeriod(): readonly Candlestick[] {
-		return this._candlesticksInPeriod;
+	protected static validateData(data: readonly number[]) {
+		if (!data || !data.length)
+			throw new Error("Data is empty");
+
+		if (data.length === 1)
+			throw new Error("Data count must be > 1");
 	}
 
-	public process(candlestick: Candlestick) {
-		if (!this.previousCandlestick) {
-			this.previousCandlestick = candlestick;
+	public get currentValue(): TValue | undefined {
+		return this._values.length ? this._values[this._values.length - 1].value : undefined;
+	}
 
-			if (this.settings.periodKind === PeriodKind.Days) {
-				this.dayOpenPrice = candlestick.openPrice;
-				this.dailyVolume = candlestick.volume;
-				this.dailyPriceRange.updateIfValueOutOfRange(candlestick.lowPrice);
-				this.dailyPriceRange.updateIfValueOutOfRange(candlestick.highPrice);
-			}
-			else
-				this._candlesticksInPeriod.push(candlestick);
+	public get values(): readonly IDateValuePair<TValue>[] {
+		return this._values;
+	}
 
+	protected get prices(): readonly number[] {
+		return this._candlesticks.map(cs => cs.closePrice);
+	}
+
+	protected get candlesticks(): readonly Candlestick[] {
+		return this._candlesticks;
+	}
+
+	public process(newCandlestick: Candlestick): TValue | undefined {
+		if (!this.lastProcessedCandlestick) {
+			this._candlesticks.push(newCandlestick);
+			this.lastProcessedCandlestick = newCandlestick;
 			return;
 		}
 
-		if (DateUtils.compareDateAndHours(this.previousCandlestick.openTime, candlestick.openTime) > 0)
-			throw new Error(`MovingAverage: current candlestick.openDate < previos candlestick.openDate`);
-		else if (DateUtils.compareDateAndHours(this.previousCandlestick.openTime, candlestick.openTime) === 0)
-			throw new Error(`MovingAverage: current candlestick already processed`);
+		if (DateUtils.compareDateAndHours(this.lastProcessedCandlestick.openTime, newCandlestick.openTime) > 0)
+			throw new Error(`Previos candlestick.openDate > current candlestick.openDate`);
+		else if (DateUtils.compareDateAndHours(this.lastProcessedCandlestick.openTime, newCandlestick.openTime) === 0)
+			throw new Error(`Candlestick already processed`);
+
+		if (this.shouldMergeCandlesticks(newCandlestick)) {
+			const currentCandlestick = this._candlesticks.pop()!;
+			this._values.pop();
+			this._candlesticks.push(
+				new Candlestick(currentCandlestick.openTime,
+								currentCandlestick.openPrice,
+								Math.max(currentCandlestick.highPrice, newCandlestick.highPrice),
+								Math.min(currentCandlestick.lowPrice, newCandlestick.lowPrice),
+								newCandlestick.closePrice,
+								currentCandlestick.volume + newCandlestick.volume,
+								newCandlestick.closeTime)
+			);
+		}
+		else {
+			this._candlesticks.push(newCandlestick);
+		}
+
+		this.lastProcessedCandlestick = newCandlestick;
+
+		if (this._candlesticks.length < this.settings.length)
+			return;
+
+		if (this._candlesticks.length > this.settings.length)
+			this._candlesticks.shift();
+
+		const value = this.calculateValueImpl();
+		this._values.push({value: value, timestamp: this._candlesticks[this._candlesticks.length - 1].openTime});
+
+		if (this.values.length > Indicator.valuesLimit)
+			this._values.shift();
+
+		return value;
+	}
+
+	protected abstract calculateValueImpl(): TValue;
+
+	private shouldMergeCandlesticks(newCandlestick: Candlestick): boolean {
+		const currentCandlestick = this._candlesticks[this._candlesticks.length - 1];
 		
-		if (this.settings.periodKind === PeriodKind.Days) {
-			if (this.previousCandlestick.openTime.getUTCDate() === candlestick.openTime.getUTCDate()) {
-				this.dailyVolume += candlestick.volume;
-				this.dailyPriceRange.updateIfValueOutOfRange(candlestick.lowPrice);
-				this.dailyPriceRange.updateIfValueOutOfRange(candlestick.highPrice);
-			}
-			else {
-				this._candlesticksInPeriod.push(new Candlestick(
-					DateUtils.getStartOfDay(this.previousCandlestick.openTime),
-					this.dayOpenPrice!,
-					this.dailyPriceRange.max!,
-					this.dailyPriceRange.min!,
-					this.previousCandlestick.closePrice,
-					this.dailyVolume,
-					this.previousCandlestick.closeTime)
-				);
-
-				this.dayOpenPrice = candlestick.openPrice;
-				this.dailyVolume = candlestick.volume;
-				this.dailyPriceRange = new NumberRange();
-				this.dailyPriceRange.updateIfValueOutOfRange(candlestick.lowPrice);
-				this.dailyPriceRange.updateIfValueOutOfRange(candlestick.highPrice);
-			}
+		//I assume that the gap in data can be maximum 2 days.
+		switch(this.settings.candlestickPeriod) {
+			case CandlestickPeriod.OneHour:
+			case CandlestickPeriod.TwoHours:
+			case CandlestickPeriod.FourHours:
+			case CandlestickPeriod.SixHours:
+			case CandlestickPeriod.TwelveHours:
+				const hoursPeriod = Number(this.settings.candlestickPeriod.toString().replace("H", ""));
+				return Math.floor(newCandlestick.openTime.getUTCHours() / hoursPeriod) === Math.floor(currentCandlestick.openTime.getUTCHours() / hoursPeriod)
+					&& newCandlestick.openTime.getUTCDate() === currentCandlestick.openTime.getUTCDate();
+			case CandlestickPeriod.OneDay:
+				return newCandlestick.openTime.getUTCDate() === currentCandlestick.openTime.getUTCDate();
+			case CandlestickPeriod.OneWeek:
+				return newCandlestick.openTime.getUTCDay() >= currentCandlestick.closeTime.getUTCDay();
+			case CandlestickPeriod.OneMonth:
+				return newCandlestick.openTime.getUTCMonth() === currentCandlestick.openTime.getUTCMonth();
 		}
-		else
-			this._candlesticksInPeriod.push(candlestick);
-
-		this.previousCandlestick = candlestick;
-
-		if (this._candlesticksInPeriod.length < this.settings.period)
-			return;
-
-		if (this._candlesticksInPeriod.length > this.settings.period)
-			this._candlesticksInPeriod.shift();
-
-		this.updateValue();
 	}
-
-	protected abstract updateValue(): void;
 }

@@ -6,11 +6,11 @@ import { VolumeWeightedMovingAverageIndicator } from "./volume-weighted-moving-a
 export class MovingAverageFactory {
 	public static create(kind: MovingAverageKind, settings: IMovingAverageSettings): MovingAverageIndicator {
 		switch(kind) {
-			case MovingAverageKind.SMA:
+			case MovingAverageKind.Simple:
 				return new SimpleMovingAverageIndicator(settings);
-			case MovingAverageKind.EMA:
+			case MovingAverageKind.Exponential:
 				return new ExponentialMovingAverageIndicator(settings);
-			case MovingAverageKind.VWMA:
+			case MovingAverageKind.VolumeWeighted:
 				return new VolumeWeightedMovingAverageIndicator(settings);
 		}
 	}
